@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Log Book v2.0 — Truck Manager</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KICA8cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjM2IiBmaWxsPSIjMWQ0ZWQ4Ii8+CiAgPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMTU2IiBoZWlnaHQ9IjE1NiIgcng9IjI4IiBmaWxsPSIjMjU2M2ViIi8+CiAgPHRleHQgeD0iOTAiIHk9IjEwNSIgZm9udC1zaXplPSI3MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjaywgQXJpYWwiIGZvbnQtd2VpZ2h0PSI5MDAiPkxCPC90ZXh0PgogIDx0ZXh0IHg9IjkwIiB5PSIxNDUiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM5M2M1ZmQiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiIGxldHRlci1zcGFjaW5nPSI0Ij5UUlVDSzwvdGV4dD4KPC9zdmc+">
+<meta name="theme-color" content="#1d4ed8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --blue:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706;
+  --orange:#ea580c;--purple:#7c3aed;--teal:#0891b2;
+  --bg:#f1f5f9;--card:#fff;--border:#e2e8f0;
+  --text:#1e293b;--sub:#64748b;--light:#f8fafc;
+  --nav-h:64px;--top-h:56px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}
+
+/* ── TOP BAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  height:var(--top-h);
+  background:var(--blue);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;
+  padding-top:env(safe-area-inset-top,0);
+  box-shadow:0 2px 8px rgba(0,0,0,.2)
+}
+.topbar-title{color:#fff;font-size:16px;font-weight:700}
+.topbar-sub{color:#bfdbfe;font-size:11px;margin-top:1px}
+.topbar-actions{display:flex;gap:8px}
+.icon-btn{background:#ffffff22;border:none;border-radius:8px;color:#fff;padding:7px 10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px}
+.icon-btn:active{background:#ffffff44}
+
+/* ── SCREEN CONTAINER ── */
+.screens{
+  position:fixed;
+  top:var(--top-h);
+  left:0;right:0;
+  bottom:calc(var(--nav-h) + var(--safe-bottom));
+  overflow:hidden;
+}
+.screen{
+  position:absolute;inset:0;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:12px 12px 20px;
+  display:none;background:var(--bg);
+}
+.screen.active{display:block}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  height:var(--nav-h);
+  padding-bottom:var(--safe-bottom);
+  background:#fff;
+  border-top:1px solid var(--border);
+  display:grid;grid-template-columns:repeat(5,1fr);
+  box-shadow:0 -2px 10px rgba(0,0,0,.08)
+}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;border:none;background:none;
+  color:var(--sub);font-size:10px;font-weight:600;
+  padding:6px 2px;transition:color .15s
+}
+.nav-item.active{color:var(--blue)}
+.nav-item .nav-icon{font-size:22px;line-height:1}
+.nav-item .nav-label{font-size:10px;white-space:nowrap}
+
+/* ── CARDS ── */
+.card{background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+/* ── STAT GRID ── */
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat-row.cols3{grid-template-columns:1fr 1fr 1fr}
+.stat{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.stat .val{font-size:22px;font-weight:800;color:var(--text);line-height:1}
+.stat .lbl{font-size:10px;color:var(--sub);margin-top:4px}
+.stat.blue .val{color:var(--blue)}
+.stat.green .val{color:var(--green)}
+.stat.orange .val{color:var(--orange)}
+.stat.red .val{color:var(--red)}
+.stat.amber .val{color:var(--amber)}
+
+/* ── ALERT BOXES ── */
+.alert-box{border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px}
+.alert-box.red{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.alert-box.amber{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.alert-box.green{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.alert-box .alert-icon{font-size:20px;flex-shrink:0}
+
+/* ── FORM FIELDS ── */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.field input,.field select,.field textarea{
+  width:100%;padding:14px;
+  border:2px solid var(--border);border-radius:10px;
+  font-size:16px;/* 16px prevents zoom on iOS */
+  font-family:inherit;color:var(--text);background:#fff;
+  -webkit-appearance:none;appearance:none
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)
+}
+.field textarea{height:80px;resize:none}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M7 7l3 3 3-3' stroke='%2364748b' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:20px;padding-right:36px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* ── BUTTONS ── */
+.btn{
+  padding:14px 18px;border-radius:12px;border:none;
+  font-size:15px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  width:100%;transition:all .12s
+}
+.btn:active{transform:scale(.97)}
+.btn.blue{background:var(--blue);color:#fff}
+.btn.green{background:var(--green);color:#fff}
+.btn.red{background:var(--red);color:#fff}
+.btn.amber{background:var(--amber);color:#fff}
+.btn.orange{background:var(--orange);color:#fff}
+.btn.grey{background:#e5e7eb;color:#374151}
+.btn.outline{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+.btn.sm{padding:10px 14px;font-size:13px;border-radius:9px}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.btn-row.single{grid-template-columns:1fr}
+.btn-row.triple{grid-template-columns:1fr 1fr 1fr}
+
+/* ── LIST ITEMS ── */
+.list-item{
+  background:var(--card);border-radius:12px;padding:14px;
+  margin-bottom:8px;display:flex;gap:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,.07);
+  align-items:flex-start
+}
+.list-item .item-icon{font-size:24px;flex-shrink:0;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.list-item .item-body{flex:1;min-width:0}
+.list-item .item-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.list-item .item-sub{font-size:12px;color:var(--sub);line-height:1.5}
+.list-item .item-right{text-align:right;flex-shrink:0}
+.list-item .item-val{font-size:16px;font-weight:800;color:var(--orange)}
+.list-item .item-date{font-size:11px;color:var(--sub)}
+.list-item .item-badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-top:4px}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge.green{background:#dcfce7;color:#15803d}
+.badge.amber{background:#fef3c7;color:#b45309}
+.badge.red{background:#fee2e2;color:#dc2626}
+.badge.blue{background:#dbeafe;color:#1d4ed8}
+.badge.grey{background:#f1f5f9;color:var(--sub)}
+
+/* ── PROGRESS ── */
+.prog-wrap{background:#f1f5f9;border-radius:999px;height:8px;overflow:hidden;margin-top:6px}
+.prog{height:8px;border-radius:999px}
+
+/* ── UPLOAD ── */
+.upload-zone{
+  border:2px dashed var(--border);border-radius:12px;
+  padding:20px;text-align:center;cursor:pointer;background:var(--light);
+  margin-bottom:10px
+}
+.upload-zone:active{background:#eff6ff;border-color:var(--blue)}
+.upload-zone .uz-icon{font-size:32px;display:block;margin-bottom:6px}
+.upload-zone p{font-size:13px;color:var(--sub)}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.thumb{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .del{position:absolute;top:2px;right:2px;background:rgba(220,38,38,.85);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* ── SECTION HEADER ── */
+.section-hdr{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* ── CONSUMPTION DISPLAY ── */
+.cons-display{background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:12px;margin-bottom:12px;display:none}
+.cons-display .cons-val{font-size:28px;font-weight:800;color:var(--blue)}
+.cons-display .cons-lbl{font-size:12px;color:#1d4ed8;margin-top:2px}
+
+/* ── SCHEDULE TABLE ── */
+.sched-item{background:var(--card);border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.sched-item .sched-name{font-size:14px;font-weight:700;margin-bottom:6px}
+.sched-item .sched-meta{font-size:12px;color:var(--sub);margin-bottom:6px}
+.sched-item .sched-status{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end}
+.modal-sheet{background:#fff;border-radius:20px 20px 0 0;padding:20px 16px;padding-bottom:calc(20px + var(--safe-bottom));width:100%;max-height:85vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:14px}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:40px 20px;color:var(--sub)}
+.empty .empty-icon{font-size:48px;display:block;margin-bottom:12px;opacity:.5}
+.empty p{font-size:14px}
+
+/* ── KM DISPLAY ── */
+.km-display{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:20px;margin-bottom:12px;text-align:center}
+.km-display .km-val{font-size:42px;font-weight:800;letter-spacing:-1px}
+.km-display .km-lbl{font-size:12px;opacity:.75;margin-top:4px}
+.km-display .km-sub{font-size:13px;opacity:.9;margin-top:8px}
+
+/* ── CHART BARS ── */
+.bar-chart{display:flex;gap:6px;align-items:flex-end;height:100px;overflow-x:auto;padding-bottom:4px}
+.bar-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:44px}
+.bar{width:36px;border-radius:5px 5px 0 0}
+.bar-lbl{font-size:9px;color:var(--sub);white-space:nowrap}
+.bar-val{font-size:9px;font-weight:700}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:calc(var(--nav-h) + 12px + var(--safe-bottom));
+  left:50%;transform:translateX(-50%);
+  background:#1e293b;color:#fff;
+  padding:10px 18px;border-radius:24px;
+  font-size:13px;font-weight:600;
+  z-index:999;white-space:nowrap;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  animation:toast-in .25s ease;
+}
+@keyframes toast-in{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.evt-time-pending{color:var(--sub)}
+.evt-time-done{color:var(--green)}
+
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div onclick="openVehicleConfig()" style="cursor:pointer">
+    <div class="topbar-title" id="topbar-title">🚛 Log Book</div>
+    <div class="topbar-sub" id="topbar-sub">Tocá para configurar vehículo ✏️</div>
+  </div>
+  <div class="topbar-actions">
+    <span style="color:#93c5fd;font-size:10px;font-weight:700;align-self:center;margin-right:2px">v2.0</span>
+    <button class="icon-btn" onclick="openVehicleConfig()" title="Configurar vehículo">⚙️</button>
+    <button class="icon-btn" onclick="saveData()" title="Backup JSON">💾</button>
+    <button class="icon-btn" onclick="document.getElementById('json-load').click()" title="Restaurar backup">📂</button>
+    <button class="icon-btn" onclick="exportExcel()" title="Exportar Excel">📊</button>
+  </div>
+</div>
+<input type="file" id="json-load" accept=".json" style="display:none" onchange="loadJSON(this)">
+
+<!-- VEHICLE CONFIG MODAL -->
+<div id="vehicle-modal" class="modal-bg" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Configurar vehículo</div>
+    <div class="field"><label>Placa / ID del camión</label><input type="text" id="cfg-plate" placeholder="ej. FE659, ABC123..." style="font-size:20px;font-weight:800;color:var(--blue)"></div>
+    <div class="field"><label>Marca y modelo</label><input type="text" id="cfg-model" placeholder="ej. Mitsubishi Canter FE659"></div>
+    <div class="field"><label>Motor</label><input type="text" id="cfg-engine" placeholder="ej. 4D34-3AT Turbo Diesel 3.9L"></div>
+    <div class="field"><label>Conductor</label><input type="text" id="cfg-driver" placeholder="ej. Juan García"></div>
+    <div style="border-top:1px solid var(--border);margin:12px 0;padding-top:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">🤖 Claude AI — Escáner de recibos</div>
+      <button onclick="promptForKey()" style="width:100%;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--blue);text-align:center;display:block">
+        🔑 Configurar API key de Claude
+      </button>
+      <div style="font-size:10px;color:var(--sub);margin-top:6px;text-align:center">La key se guarda solo en este dispositivo, nunca en el código</div>
+    </div>
+    <div class="btn-row single" style="margin-top:4px">
+      <button class="btn blue" onclick="saveVehicleConfig()">✅ Guardar configuración</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREENS -->
+<div class="screens">
+
+  <!-- ── DASHBOARD ── -->
+  <div class="screen active" id="scr-dash">
+    <div class="km-display">
+      <div class="km-val" id="d-km">—</div>
+      <div class="km-lbl">KM ACTUAL DASHBOARD</div>
+      <div class="km-sub" id="d-km-sub">Agrega el KM del día para actualizar</div>
+    </div>
+    <div id="d-alerts"></div>
+    <div class="stat-row">
+      <div class="stat orange"><div class="val" id="d-fuel-month">$—</div><div class="lbl">⛽ Combustible este mes</div></div>
+      <div class="stat amber"><div class="val" id="d-cons">— L</div><div class="lbl">Consumo promedio L/100km</div></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat blue"><div class="val" id="d-next-svc">—</div><div class="lbl">🔧 Próximo service</div></div>
+      <div class="stat green"><div class="val" id="d-days">—</div><div class="lbl">📅 Días registrados</div></div>
+    </div>
+
+    <div class="section-hdr">Últimas cargas</div>
+    <div id="d-fuel-list"></div>
+
+    <div class="section-hdr">Mantenimientos próximos</div>
+    <div id="d-maint-list"></div>
+  </div>
+
+  <!-- ── DÍA ── -->
+  <div class="screen" id="scr-day">
+    <div id="day-alerts"></div>
+    <!-- TODAY CARD -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="card-title" style="margin-bottom:0" id="day-today-label">📅 Hoy</div>
+        <div id="day-route-badge" style="background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px"></div>
+      </div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:14px" id="day-date-display"></div>
+
+      <!-- KM CON FOTO -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">🔢 KM Odómetro</div>
+        <button onclick="document.getElementById('odo-cam').click()" style="width:100%;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;color:var(--blue);margin-bottom:8px;display:block;text-align:center">
+          📷 Fotografiar odómetro
+        </button>
+        <input type="file" id="odo-cam" accept="image/*,application/pdf" style="display:none" onchange="scanOdometer(this)">
+        <input type="number" id="dl-km-start" placeholder="O ingresá el KM manualmente" inputmode="numeric"
+          style="width:100%;font-size:26px;font-weight:800;color:var(--blue);padding:12px;border:2px solid var(--border);border-radius:10px;background:#fff">
+        <div id="odo-scan-status" style="display:none;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:10px;margin-top:8px;text-align:center">
+          <div style="font-size:20px" id="odo-scan-icon">⏳</div>
+          <div style="font-size:12px;font-weight:700;color:#1d4ed8" id="odo-scan-msg">Leyendo odómetro...</div>
+        </div>
+      </div>
+
+      <!-- ROUTE FIELD -->
+      <div class="field" style="margin-bottom:14px">
+        <label>Ruta (opcional)</label>
+        <input type="text" id="dl-route" placeholder="ej. SYD047, CBD-WEST...">
+      </div>
+
+      <!-- EVENT BUTTONS -->
+      <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Eventos del turno — toque único</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+
+        <button onclick="logEvent('leaveHome')" id="evt-leaveHome"
+          style="border-radius:12px;border:2px solid var(--border);padding:16px 10px;text-align:center;background:#fff;cursor:pointer;transition:all .15s">
+          <div style="font-size:28px;margin-bottom:4px">🏠</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">Sale de casa</div>
+          <div style="font-size:11px;margin-top:4px;font-weight:700" id="evt-leaveHome-time" class="evt-time-pending">Tocar para registrar</div>
+        </button>
+
+        <button onclick="logEvent('arriveDepot')" id="evt-arriveDepot"
+          style="border-radius:12px;border:2px solid var(--border);padding:16px 10px;text-align:center;background:#fff;cursor:pointer;transition:all .15s">
+          <div style="font-size:28px;margin-bottom:4px">📦</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">Llega depósito</div>
+          <div style="font-size:11px;margin-top:4px;font-weight:700" id="evt-arriveDepot-time" class="evt-time-pending">Tocar para registrar</div>
+        </button>
+
+        <button onclick="logEvent('startRoute')" id="evt-startRoute"
+          style="border-radius:12px;border:2px solid var(--border);padding:16px 10px;text-align:center;background:#fff;cursor:pointer;transition:all .15s">
+          <div style="font-size:28px;margin-bottom:4px">🚛</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">Sale a ruta</div>
+          <div style="font-size:11px;margin-top:4px;font-weight:700" id="evt-startRoute-time" class="evt-time-pending">Tocar para registrar</div>
+        </button>
+
+        <button onclick="logEvent('endShift')" id="evt-endShift"
+          style="border-radius:12px;border:2px solid var(--border);padding:16px 10px;text-align:center;background:#fff;cursor:pointer;transition:all .15s">
+          <div style="font-size:28px;margin-bottom:4px">🏁</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">Fin de turno</div>
+          <div style="font-size:11px;margin-top:4px;font-weight:700" id="evt-endShift-time" class="evt-time-pending">Tocar para registrar</div>
+        </button>
+
+      </div>
+
+      <!-- KM FIN -->
+      <button onclick="document.getElementById('odo-end-cam').click()" style="width:100%;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--blue);margin-bottom:8px;display:block;text-align:center">
+        📷 Fotografiar odómetro al volver
+      </button>
+      <input type="file" id="odo-end-cam" accept="image/*,application/pdf" style="display:none" onchange="scanOdometerEnd(this)">
+      <input type="number" id="dl-km-end" placeholder="KM al volver (opcional)" inputmode="numeric"
+        style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:16px;font-weight:700;color:var(--text);background:#fff;margin-bottom:8px">
+      <div id="dl-km-calc" style="background:#eff6ff;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;color:var(--blue);font-weight:700;display:none"></div>
+
+      <div class="field" style="margin-bottom:12px">
+        <label>Notas (opcional)</label>
+        <textarea id="dl-notes" placeholder="Incidencias, tráfico, observaciones..."></textarea>
+      </div>
+
+      <div class="btn-row single">
+        <button class="btn green" onclick="addDay()">✅ Guardar turno</button>
+      </div>
+    </div>
+
+    <div class="section-hdr">Historial de turnos</div>
+    <div id="day-list"></div>
+  </div>
+
+  <!-- ── COMBUSTIBLE ── -->
+  <div class="screen" id="scr-fuel">
+    <div class="card">
+      <div class="card-title">⛽ Nueva carga</div>
+
+      <!-- SCAN PRIMERO -->
+      <div class="upload-zone" onclick="document.getElementById('fu-receipt').click()">
+        <span class="uz-icon">📄</span>
+        <p><strong>Subir recibo / factura</strong><br><span style="font-size:11px;color:#94a3b8">📷 Foto · 🖼️ Galería · 📁 Files · 🤖 Claude lee automáticamente</span></p>
+      </div>
+      <input type="file" id="fu-receipt" accept="image/*,application/pdf" style="display:none" onchange="scanFuelReceipt(this)">
+      <div id="fu-scan-status" style="display:none;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:14px;margin-bottom:10px;text-align:center">
+        <div style="font-size:24px;margin-bottom:6px" id="fu-scan-icon">⏳</div>
+        <div style="font-size:13px;font-weight:700;color:#1d4ed8" id="fu-scan-msg">Analizando recibo con IA...</div>
+      </div>
+      <div class="thumbs" id="fu-thumbs"></div>
+      <div id="fuel-alerts"></div>
+
+      <!-- DATOS — verificar/editar después del scan -->
+      <div class="row2">
+        <div class="field"><label>Fecha</label><input type="date" id="fu-date"></div>
+        <div class="field"><label>Tanque</label>
+          <select id="fu-full"><option value="yes">🟢 Lleno</option><option value="no">🟡 Parcial</option></select></div>
+      </div>
+      <div class="field">
+        <label>🔢 KM dashboard</label>
+        <button onclick="document.getElementById('fu-odo-cam').click()" style="width:100%;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--blue);margin-bottom:8px;display:block;text-align:center">
+          📷 Fotografiar odómetro
+        </button>
+        <input type="file" id="fu-odo-cam" accept="image/*,application/pdf" style="display:none" onchange="scanFuelOdo(this)">
+        <input type="number" id="fu-km" placeholder="O ingresá el KM manualmente" inputmode="numeric"
+          style="width:100%;font-size:24px;font-weight:800;color:var(--blue);padding:12px;border:2px solid var(--border);border-radius:10px;background:#fff"
+          oninput="calcConsumption()">
+        <div id="fu-odo-status" style="display:none;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:10px;margin-top:8px;text-align:center">
+          <div style="font-size:18px" id="fu-odo-icon">⏳</div>
+          <div style="font-size:12px;font-weight:700;color:#1d4ed8" id="fu-odo-msg">Leyendo odómetro...</div>
+        </div>
+      </div>
+      <div class="row3">
+        <div class="field"><label>Litros</label><input type="number" id="fu-liters" placeholder="80" step="0.1" inputmode="decimal" oninput="calcTotal()"></div>
+        <div class="field"><label>$/litro</label><input type="number" id="fu-price" placeholder="2.05" step="0.01" inputmode="decimal" oninput="calcTotal()"></div>
+        <div class="field"><label>Total $</label><input type="number" id="fu-total" placeholder="auto" step="0.01" inputmode="decimal"></div>
+      </div>
+
+      <div class="cons-display" id="cons-display">
+        <div class="cons-val" id="cons-val">—</div>
+        <div class="cons-lbl" id="cons-lbl">L/100km calculado</div>
+      </div>
+
+      <div class="field"><label>Estación de servicio</label>
+        <input type="text" id="fu-station" placeholder="BP Narellan, Shell Camden..."></div>
+
+      <div class="btn-row single">
+        <button class="btn orange" onclick="addFuel()">⛽ Registrar carga</button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-row cols3">
+      <div class="stat orange"><div class="val" id="f-total-cost">$—</div><div class="lbl">Total gastado</div></div>
+      <div class="stat amber"><div class="val" id="f-avg-cons">—</div><div class="lbl">L/100km prom.</div></div>
+      <div class="stat blue"><div class="val" id="f-fills">—</div><div class="lbl">Cargas</div></div>
+    </div>
+
+    <div class="section-hdr">Historial de cargas</div>
+    <div id="fuel-list"></div>
+  </div>
+
+  <!-- ── MANTENIMIENTO ── -->
+  <div class="screen" id="scr-maint">
+    <div class="card">
+      <div class="card-title">🔧 Nuevo mantenimiento</div>
+
+      <!-- SCAN PRIMERO -->
+      <div class="upload-zone" onclick="document.getElementById('mt-receipt').click()">
+        <span class="uz-icon">📄</span>
+        <p><strong>Subir factura / comprobante</strong><br><span style="font-size:11px;color:#94a3b8">📷 Foto · 🖼️ Galería · 📁 Files · 🤖 Claude extrae costo y descripción</span></p>
+      </div>
+      <input type="file" id="mt-receipt" accept="image/*,application/pdf" style="display:none" onchange="scanMaintReceipt(this)">
+      <div id="mt-scan-status" style="display:none;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:14px;margin-bottom:10px;text-align:center">
+        <div style="font-size:24px;margin-bottom:6px" id="mt-scan-icon">⏳</div>
+        <div style="font-size:13px;font-weight:700;color:#1d4ed8" id="mt-scan-msg">Analizando factura con IA...</div>
+      </div>
+      <div class="thumbs" id="mt-thumbs"></div>
+
+      <!-- DATOS — verificar/editar después del scan -->
+      <div class="field"><label>Fecha</label><input type="date" id="mt-date"></div>
+      <div class="field">
+        <label>KM dashboard</label>
+        <button onclick="document.getElementById('mt-odo-cam').click()" style="width:100%;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--blue);margin-bottom:8px;display:block;text-align:center">
+          📷 Fotografiar odómetro
+        </button>
+        <input type="file" id="mt-odo-cam" accept="image/*,application/pdf" style="display:none" onchange="scanMaintOdo(this)">
+        <input type="number" id="mt-km" placeholder="O ingresá el KM manualmente" inputmode="numeric"
+          style="width:100%;font-weight:800;font-size:20px;color:var(--blue);padding:12px;border:2px solid var(--border);border-radius:10px;background:#fff">
+        <div id="mt-odo-status" style="display:none;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:10px;margin-top:6px;text-align:center">
+          <div style="font-size:18px" id="mt-odo-icon">⏳</div>
+          <div style="font-size:12px;font-weight:700;color:#1d4ed8" id="mt-odo-msg">Leyendo odómetro...</div>
+        </div>
+      </div>
+      <div class="field"><label>Tipo de trabajo</label>
+        <select id="mt-type">
+          <option>Cambio de aceite + filtro</option>
+          <option>Filtro de aire</option>
+          <option>Filtro de combustible</option>
+          <option>Frenos — pastillas/zapatas</option>
+          <option>Neumáticos — rotación</option>
+          <option>Neumáticos — reemplazo</option>
+          <option>Correa de distribución</option>
+          <option>Batería</option>
+          <option>Refrigerante</option>
+          <option>Inspección general</option>
+          <option>Reparación mecánica</option>
+          <option>Eléctrico</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Costo $</label><input type="number" id="mt-cost" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+        <div class="field"><label>Taller</label><input type="text" id="mt-workshop" placeholder="Nombre taller"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Próx. service KM</label><input type="number" id="mt-next-km" placeholder="KM" inputmode="numeric"></div>
+        <div class="field"><label>Próx. service fecha</label><input type="date" id="mt-next-date"></div>
+      </div>
+      <div class="field"><label>Descripción</label><textarea id="mt-desc" placeholder="Detalle del trabajo, repuestos..."></textarea></div>
+      <div class="btn-row single">
+        <button class="btn blue" onclick="addMaint()">🔧 Registrar mantenimiento</button>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="section-hdr" id="sched-hdr">Programa de service</div>
+    <div id="sched-list"></div>
+
+    <div class="section-hdr">Historial de mantenimientos</div>
+    <div id="maint-list"></div>
+  </div>
+
+  <!-- ── REPORTES ── -->
+  <div class="screen" id="scr-reports">
+    <div class="card">
+      <div class="card-title">📈 Consumo L/100km</div>
+      <div class="bar-chart" id="cons-chart"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💰 Gasto por mes</div>
+      <div id="month-report"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔧 Costos de mantenimiento</div>
+      <div id="maint-report"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📤 Datos & Backup</div>
+      <div class="alert-box green" style="margin-bottom:12px">
+        <span class="alert-icon">✅</span>
+        <span>Tus datos se guardan <strong>automáticamente</strong> en este Safari cada vez que agregas algo.</span>
+      </div>
+      <div style="font-size:13px;color:var(--sub);margin-bottom:12px">Descarga un backup JSON de vez en cuando por si acaso — especialmente antes de actualizar iOS o limpiar Safari.</div>
+      <div class="btn-row">
+        <button class="btn orange" onclick="saveData()">💾 Backup JSON</button>
+        <button class="btn grey" onclick="exportExcel()">📊 Excel</button>
+      </div>
+      <div style="font-size:11px;color:var(--sub);margin-top:10px;text-align:center" id="save-status">Los datos se guardan automáticamente</div>
+    </div>
+  </div>
+
+</div><!-- /screens -->
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="nav('dash',this)"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></button>
+  <button class="nav-item" onclick="nav('day',this)"><span class="nav-icon">📅</span><span class="nav-label">Día</span></button>
+  <button class="nav-item" onclick="nav('fuel',this)"><span class="nav-icon">⛽</span><span class="nav-label">Combustible</span></button>
+  <button class="nav-item" onclick="nav('maint',this)"><span class="nav-icon">🔧</span><span class="nav-label">Service</span></button>
+  <button class="nav-item" onclick="nav('reports',this)"><span class="nav-icon">📈</span><span class="nav-label">Reportes</span></button>
+</nav>
+
+<!-- IMAGE VIEWER MODAL -->
+<div id="img-modal" class="modal-bg" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📄 Recibo</div>
+    <div id="img-viewer"></div>
+    <button class="btn grey" style="margin-top:14px" onclick="document.getElementById('img-modal').style.display='none'">Cerrar</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════
+// DATA
+// ══════════════════════════
+let db={
+  currentKm:0,
+  nextServiceKm:0,
+  nextServiceDate:'',
+  dayLogs:[],
+  fuelLogs:[],
+  maintLogs:[],
+  savedAt:'',
+  vehicle:{
+    plate:'',
+    model:'',
+    route:'SYD047',
+    engine:'',
+    driver:''
+  }
+};
+
+const SCHEDULE=[
+  {name:"Aceite + filtro",     km:10000, priority:"high",   desc:"SAE 10W-40 Diesel 7.5L"},
+  {name:"Filtro combustible",  km:20000, priority:"high",   desc:"Primario y secundario"},
+  {name:"Filtro de aire",      km:20000, priority:"medium", desc:"Limpiar a 10k, reemplazar a 20k"},
+  {name:"Correa distribución", km:100000,priority:"critical",desc:"⚠ CRÍTICO — no omitir"},
+  {name:"Frenos — inspección", km:20000, priority:"high",   desc:"Medir pastillas y discos"},
+  {name:"Rotación neumáticos", km:10000, priority:"medium", desc:"Presión: 95 PSI traseros"},
+  {name:"Inspección general",  km:20000, priority:"medium", desc:"Luces, fluidos, suspensión"},
+];
+
+let fuelReceipts=[], maintReceipts=[];
+
+// ══════════════════════════
+// UTILS
+// ══════════════════════════
+const $ = id => document.getElementById(id);
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function today(){return new Date().toISOString().slice(0,10);}
+function fmtDate(d){if(!d)return'—';const p=d.split('-');return`${p[2]}/${p[1]}/${p[0]}`;}
+function fmtNum(n){return Number(n||0).toLocaleString('en-AU');}
+function fmtMoney(n){return'$'+(Number(n||0)).toFixed(2);}
+function fmtL(n){return Number(n||0).toFixed(1)+'L';}
+
+function toast(msg,color='#1e293b'){
+  const existing=document.querySelector('.toast');
+  if(existing)existing.remove();
+  const el=document.createElement('div');
+  el.className='toast';
+  el.style.background=color;
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2800);
+}
+
+// ══════════════════════════
+// NAVIGATION
+// ══════════════════════════
+function nav(scr,el){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('scr-'+scr).classList.add('active');
+  if(el)el.classList.add('active');
+  if(scr==='dash')renderDash();
+  if(scr==='day'){initDayScreen();}
+  if(scr==='fuel'){
+    $('fu-date').value=today();
+    renderFuelList();
+    renderFuelStats();
+    const fa=$('fuel-alerts');
+    if(fa){
+      const urgentAlerts=buildAlerts().filter(a=>a.isOverdue||a.isClose);
+      fa.innerHTML=urgentAlerts.length
+        ?`<div style="margin-bottom:8px">${urgentAlerts.slice(0,2).map(a=>alertMiniHTML(a)).join('')}</div>`
+        :'';
+    }
+  }
+  if(scr==='maint'){$('mt-date').value=today();renderMaintList();renderSchedule();}
+  if(scr==='reports')renderReports();
+}
+
+// ══════════════════════════
+// AUTO SAVE / LOAD (localStorage)
+// ══════════════════════════
+const LS_KEY='fe659_logbook_v1';
+
+function autoSave(){
+  try{
+    db.savedAt=new Date().toISOString();
+    localStorage.setItem(LS_KEY,JSON.stringify(db));
+    // Update save indicator
+    const el=$('save-status');
+    if(el)el.textContent='✅ Auto-guardado: '+new Date().toLocaleTimeString('es-AU');
+  }catch(e){
+    // localStorage full (images take space) — warn user
+    toast('⚠️ Espacio lleno — exporta backup JSON','#d97706');
+  }
+}
+
+function autoLoad(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(raw){
+      const loaded=JSON.parse(raw);
+      Object.assign(db,loaded);
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+// Manual JSON backup — download
+function saveData(){
+  db.savedAt=new Date().toISOString();
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`FE659_LogBook_${today()}.json`;
+  a.click();
+  const el=$('save-status');
+  if(el)el.textContent='✅ Backup descargado: '+new Date().toLocaleTimeString('es-AU');
+  toast('✅ Backup JSON descargado','#16a34a');
+}
+
+// Manual JSON restore — upload
+function loadJSON(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const loaded=JSON.parse(e.target.result);
+      Object.assign(db,loaded);
+      autoSave();
+      renderAll();
+      toast(`✅ ${db.fuelLogs.length} cargas · ${db.maintLogs.length} services · ${db.dayLogs.length} días`,'#16a34a');
+    }catch(err){toast('❌ Error al leer archivo','#dc2626');}
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+
+// ══════════════════════════
+// DAY LOG — EVENT BASED
+// ══════════════════════════
+let todayEvents={leaveHome:null,arriveDepot:null,startRoute:null,endShift:null};
+
+function initDayScreen(){
+  const now=new Date();
+  const dateStr=now.toISOString().slice(0,10);
+  // Check if there's already an open day today
+  const existing=db.dayLogs.find(d=>d.date===dateStr&&!d.closed);
+  if(existing){
+    todayEvents={
+      leaveHome:existing.leaveHome||null,
+      arriveDepot:existing.arriveDepot||null,
+      startRoute:existing.startRoute||null,
+      endShift:existing.endShift||null
+    };
+    if($('dl-km-start')&&existing.kmStart)$('dl-km-start').value=existing.kmStart;
+    if($('dl-route')&&existing.route)$('dl-route').value=existing.route;
+    if($('dl-notes')&&existing.notes)$('dl-notes').value=existing.notes;
+  } else {
+    todayEvents={leaveHome:null,arriveDepot:null,startRoute:null,endShift:null};
+  }
+  // Update date display
+  const label=$('day-today-label');
+  const disp=$('day-date-display');
+  const badge=$('day-route-badge');
+  if(label)label.textContent='📅 '+now.toLocaleDateString('es-AU',{weekday:'long',day:'numeric',month:'long'});
+  if(disp)disp.textContent=dateStr.split('-').reverse().join('/');
+  if(badge)badge.textContent='';
+  if($('dl-route'))$('dl-route').value='';
+  renderEventButtons();
+  renderDayList();
+  // Mini alerts
+  const da=$('day-alerts');
+  if(da){
+    const urgentAlerts=buildAlerts().filter(a=>a.isOverdue||a.isClose);
+    da.innerHTML=urgentAlerts.length
+      ?`<div style="margin-bottom:8px">${urgentAlerts.slice(0,3).map(a=>alertMiniHTML(a)).join('')}</div>`
+      :'';
+  }
+}
+
+function nowTime(){
+  return new Date().toLocaleTimeString('es-AU',{hour:'2-digit',minute:'2-digit',hour12:true});
+}
+
+function logEvent(evt){
+  const time=nowTime();
+  // If already logged, confirm overwrite
+  if(todayEvents[evt]){
+    if(!confirm(`Ya registrado: ${todayEvents[evt]}\n¿Actualizar la hora?`))return;
+  }
+  todayEvents[evt]=time;
+  renderEventButtons();
+  // Auto-save partial day
+  autoSavePartialDay();
+  const names={leaveHome:'Sale de casa',arriveDepot:'Llega depósito',startRoute:'Sale a ruta',endShift:'Fin de turno'};
+  toast(`✅ ${names[evt]}: ${time}`,'#16a34a');
+}
+
+function renderEventButtons(){
+  const events=[
+    {id:'leaveHome',   icon:'🏠', label:'Sale de casa'},
+    {id:'arriveDepot', icon:'📦', label:'Llega depósito'},
+    {id:'startRoute',  icon:'🚛', label:'Sale a ruta'},
+    {id:'endShift',    icon:'🏁', label:'Fin de turno'},
+  ];
+  events.forEach(ev=>{
+    const btn=$('evt-'+ev.id);
+    const timeEl=$('evt-'+ev.id+'-time');
+    if(!btn||!timeEl)return;
+    const done=!!todayEvents[ev.id];
+    btn.style.background=done?'#f0fdf4':'#fff';
+    btn.style.borderColor=done?'#86efac':ev.id==='endShift'&&todayEvents.startRoute?'#bfdbfe':'var(--border)';
+    timeEl.textContent=done?'✅ '+todayEvents[ev.id]:'Tocar para registrar';
+    timeEl.className=done?'evt-time-done':'evt-time-pending';
+  });
+  // Update km calc
+  const s=parseFloat($('dl-km-start')?.value)||0;
+  const e=parseFloat($('dl-km-end')?.value)||0;
+  const calc=$('dl-km-calc');
+  if(calc){
+    if(s&&e&&e>s){calc.style.display='block';calc.innerHTML=`📍 Km recorridos: <strong>${fmtNum(e-s)} km</strong>`;}
+    else{calc.style.display='none';}
+  }
+}
+
+function autoSavePartialDay(){
+  const date=new Date().toISOString().slice(0,10);
+  const kmStart=parseFloat($('dl-km-start')?.value)||0;
+  const existing=db.dayLogs.findIndex(d=>d.date===date&&!d.closed);
+  const entry={
+    id:existing>=0?db.dayLogs[existing].id:uid(),
+    date,
+    route:$('dl-route')?.value||(''),
+    kmStart:kmStart||db.dayLogs[existing>=0?existing:0]?.kmStart||0,
+    kmEnd:null,kmDriven:null,
+    leaveHome:todayEvents.leaveHome,
+    arriveDepot:todayEvents.arriveDepot,
+    startRoute:todayEvents.startRoute,
+    endShift:todayEvents.endShift,
+    notes:$('dl-notes')?.value.trim()||'',
+    closed:false
+  };
+  if(existing>=0)db.dayLogs[existing]=entry;
+  else db.dayLogs.unshift(entry);
+  autoSave();
+}
+
+$('dl-km-end')&&$('dl-km-end').addEventListener('input',renderEventButtons);
+$('dl-km-start')&&$('dl-km-start').addEventListener('input',renderEventButtons);
+
+function addDay(){
+  const date=new Date().toISOString().slice(0,10);
+  const kmStart=parseFloat($('dl-km-start').value)||0;
+  const kmEnd=parseFloat($('dl-km-end').value)||null;
+  if(!kmStart&&!Object.values(todayEvents).some(Boolean)){
+    toast('❌ Registrá al menos un evento o el KM','#dc2626');return;
+  }
+  const existing=db.dayLogs.findIndex(d=>d.date===date);
+  const entry={
+    id:existing>=0?db.dayLogs[existing].id:uid(),
+    date,
+    route:$('dl-route').value||(''),
+    kmStart,kmEnd,
+    kmDriven:kmEnd&&kmStart?kmEnd-kmStart:null,
+    leaveHome:todayEvents.leaveHome,
+    arriveDepot:todayEvents.arriveDepot,
+    startRoute:todayEvents.startRoute,
+    endShift:todayEvents.endShift||nowTime(),
+    notes:$('dl-notes').value.trim(),
+    closed:true
+  };
+  const maxKm=Math.max(kmStart,kmEnd||0);
+  if(maxKm>db.currentKm)db.currentKm=maxKm;
+  if(existing>=0)db.dayLogs[existing]=entry;
+  else db.dayLogs.unshift(entry);
+  autoSave();
+  // Reset
+  todayEvents={leaveHome:null,arriveDepot:null,startRoute:null,endShift:null};
+  ['dl-km-start','dl-km-end','dl-notes'].forEach(id=>{if($(id))$(id).value='';});
+  renderEventButtons();
+  renderDayList();
+  renderDash();
+  toast('✅ Turno guardado','#16a34a');
+}
+
+// ── ODOMETER SCAN ──
+async function scanOdometer(input){
+  const file=input.files[0];if(!file)return;
+  const status=$('odo-scan-status');
+  const msg=$('odo-scan-msg');
+  const icon=$('odo-scan-icon');
+  status.style.display='block';
+  icon.textContent='⏳';msg.textContent='Leyendo odómetro con IA...';
+  try{
+    const base64=await imgToBase64(file);
+    const result=await callClaude(base64,getMediaType(file),
+      `Look at this vehicle odometer/dashboard image and extract the odometer reading (total km or miles shown).
+      Respond ONLY with valid JSON, no other text:
+      {"km": number or null, "unit": "km" or "miles", "confidence": "high" or "low"}
+      If you cannot read it clearly, use null for km.`
+    );
+    const clean=result.replace(/\`\`\`json|\`\`\`/g,'').trim();
+    const data=JSON.parse(clean);
+    if(data.km){
+      $('dl-km-start').value=Math.round(data.km);
+      renderEventButtons();
+      icon.textContent='✅';
+      msg.textContent=`KM leído: ${fmtNum(Math.round(data.km))}${data.confidence==='low'?' — verificá el número':''}`;
+      toast('✅ Odómetro leído: '+fmtNum(Math.round(data.km))+' km','#16a34a');
+    }else{
+      icon.textContent='⚠️';
+      msg.textContent='No se pudo leer — ingresá el KM manualmente';
+    }
+    setTimeout(()=>status.style.display='none',4000);
+  }catch(e){
+    icon.textContent='⚠️';
+    msg.textContent='Error al leer — ingresá el KM manualmente';
+    setTimeout(()=>status.style.display='none',3000);
+  }
+  input.value='';
+}
+
+async function scanFuelOdo(input){
+  const file=input.files[0];if(!file)return;
+  const status=$('fu-odo-status');
+  const msg=$('fu-odo-msg');
+  const icon=$('fu-odo-icon');
+  status.style.display='block';
+  icon.textContent='⏳';msg.textContent='Leyendo odómetro...';
+  try{
+    const base64=await imgToBase64(file);
+    const result=await callClaude(base64,getMediaType(file),
+      `Look at this vehicle odometer/dashboard image and extract the odometer reading (total km shown).
+      Respond ONLY with valid JSON: {"km": number or null}`
+    );
+    const data=JSON.parse(result.replace(/\`\`\`json|\`\`\`/g,'').trim());
+    if(data.km){
+      $('fu-km').value=Math.round(data.km);
+      calcConsumption();
+      icon.textContent='✅';
+      msg.textContent='KM leído: '+fmtNum(Math.round(data.km))+' — verificá';
+      toast('✅ KM leído: '+fmtNum(Math.round(data.km)),'#16a34a');
+    }else{
+      icon.textContent='⚠️';
+      msg.textContent='No se pudo leer — ingresá el KM manualmente';
+    }
+    setTimeout(()=>status.style.display='none',4000);
+  }catch(e){
+    icon.textContent='⚠️';
+    msg.textContent='Error: '+e.message;
+    setTimeout(()=>status.style.display='none',6000);
+  }
+  input.value='';
+}
+
+async function scanMaintOdo(input){
+  const file=input.files[0];if(!file)return;
+  const status=$('mt-odo-status');
+  const msg=$('mt-odo-msg');
+  const icon=$('mt-odo-icon');
+  status.style.display='block';
+  icon.textContent='⏳';msg.textContent='Leyendo odómetro...';
+  try{
+    const base64=await imgToBase64(file);
+    const result=await callClaude(base64,getMediaType(file),
+      `Look at this vehicle odometer/dashboard image and extract the odometer reading (total km shown).
+      Respond ONLY with valid JSON: {"km": number or null}`
+    );
+    const data=JSON.parse(result.replace(/\`\`\`json|\`\`\`/g,'').trim());
+    if(data.km){
+      $('mt-km').value=Math.round(data.km);
+      icon.textContent='✅';
+      msg.textContent='KM leído: '+fmtNum(Math.round(data.km))+' — verificá';
+      toast('✅ KM leído: '+fmtNum(Math.round(data.km)),'#16a34a');
+    }else{
+      icon.textContent='⚠️';
+      msg.textContent='No se pudo leer — ingresá el KM manualmente';
+    }
+    setTimeout(()=>status.style.display='none',4000);
+  }catch(e){
+    icon.textContent='⚠️';
+    msg.textContent='Error: '+e.message;
+    setTimeout(()=>status.style.display='none',6000);
+  }
+  input.value='';
+}
+
+async function scanOdometerEnd(input){
+  const file=input.files[0];if(!file)return;
+  try{
+    const base64=await imgToBase64(file);
+    const result=await callClaude(base64,getMediaType(file),
+      `Look at this vehicle odometer/dashboard image and extract the odometer reading.
+      Respond ONLY with valid JSON: {"km": number or null}`
+    );
+    const data=JSON.parse(result.replace(/\`\`\`json|\`\`\`/g,'').trim());
+    if(data.km){
+      $('dl-km-end').value=Math.round(data.km);
+      renderEventButtons();
+      toast('✅ KM final leído: '+fmtNum(Math.round(data.km)),'#16a34a');
+    }else{toast('⚠️ No se pudo leer — ingresá manualmente','#d97706');}
+  }catch(e){toast('⚠️ Error al leer imagen','#d97706');}
+  input.value='';
+}
+
+function renderDayList(){
+  const el=$('day-list');
+  if(!db.dayLogs.length){el.innerHTML='<div class="empty"><span class="empty-icon">📅</span><p>Sin turnos registrados</p></div>';return;}
+  el.innerHTML=db.dayLogs.slice(0,30).map((d,i)=>{
+    const events=[];
+    if(d.leaveHome)events.push('🏠 '+d.leaveHome);
+    if(d.arriveDepot)events.push('📦 '+d.arriveDepot);
+    if(d.startRoute)events.push('🚛 '+d.startRoute);
+    if(d.endShift)events.push('🏁 '+d.endShift);
+    return`<div class="list-item">
+      <div class="item-icon" style="background:#eff6ff;font-size:20px">📅</div>
+      <div class="item-body">
+        <div class="item-title">${fmtDate(d.date)} <span class="badge blue">${d.route||'SYD047'}</span>${d.closed?'':' <span class="badge amber">En curso</span>'}</div>
+        <div class="item-sub">
+          ${d.kmStart?`KM: <strong>${fmtNum(d.kmStart)}</strong>${d.kmEnd?' → '+fmtNum(d.kmEnd):''}${d.kmDriven?' · <strong style="color:var(--blue)">${fmtNum(d.kmDriven)} km</strong>':''}`:''}
+          ${events.length?'<br>'+events.join(' → '):''}
+          ${d.notes?`<br>${d.notes}`:''}
+        </div>
+      </div>
+      <div class="item-right">
+        <button onclick="deleteEntry('dayLogs',${i})" style="background:none;border:none;font-size:18px;color:#cbd5e1;cursor:pointer;padding:4px">✕</button>
+      </div>
+    </div>`;}).join('');
+}
+
+// ══════════════════════════
+// FUEL LOG
+// ══════════════════════════
+function calcTotal(){
+  const l=parseFloat($('fu-liters').value)||0;
+  const p=parseFloat($('fu-price').value)||0;
+  if(l&&p)$('fu-total').value=(l*p).toFixed(2);
+}
+
+function calcConsumption(){
+  const km=parseFloat($('fu-km').value)||0;
+  const liters=parseFloat($('fu-liters').value)||0;
+  if(!km)return;
+  const lastFull=db.fuelLogs.find(f=>f.isFull&&f.km<km);
+  const display=$('cons-display');
+  if(lastFull&&liters){
+    const kmDiff=km-lastFull.km;
+    const fuelBetween=db.fuelLogs.filter(f=>f.km>lastFull.km&&f.km<km).reduce((a,f)=>a+f.liters,0)+liters;
+    const l100=fuelBetween/(kmDiff/100);
+    display.style.display='block';
+    $('cons-val').textContent=l100.toFixed(2)+' L/100km';
+    const color=l100>16?'#dc2626':l100>14?'#d97706':'#16a34a';
+    $('cons-val').style.color=color;
+    $('cons-lbl').textContent=`${fmtNum(kmDiff)} km desde última carga llena${l100>16?' ⚠ Alto consumo':''}`;
+  }else{display.style.display='none';}
+}
+
+function addFuel(){
+  const date=$('fu-date').value;
+  const km=parseFloat($('fu-km').value);
+  const liters=parseFloat($('fu-liters').value);
+  if(!date||!km||!liters){toast('❌ Fecha, KM y litros son obligatorios','#dc2626');return;}
+  const price=parseFloat($('fu-price').value)||0;
+  const total=parseFloat($('fu-total').value)||(liters*price);
+  const isFull=$('fu-full').value==='yes';
+  // Calc L/100km
+  let l100km=null;
+  if(isFull){
+    const lastFull=db.fuelLogs.find(f=>f.isFull&&f.km<km);
+    if(lastFull){
+      const kmDiff=km-lastFull.km;
+      const fuelBetween=db.fuelLogs.filter(f=>f.km>lastFull.km&&f.km<=km).reduce((a,f)=>a+f.liters,0)+liters;
+      l100km=fuelBetween/(kmDiff/100);
+    }
+  }
+  const entry={id:uid(),date,km,liters,price,total,isFull,l100km,
+    station:$('fu-station').value.trim(),receipts:[...fuelReceipts]};
+  if(km>db.currentKm)db.currentKm=km;
+  db.fuelLogs.unshift(entry);
+  autoSave();
+  fuelReceipts=[];
+  $('fu-thumbs').innerHTML='';
+  $('cons-display').style.display='none';
+  ['fu-km','fu-liters','fu-price','fu-total','fu-station'].forEach(id=>$(id).value='');
+  $('fu-full').value='yes';
+  renderFuelList();
+  renderFuelStats();
+  renderDash();
+  toast(`✅ ${fmtL(liters)} cargados · ${fmtMoney(total)}${l100km?' · '+l100km.toFixed(1)+' L/100km':''}`,'#ea580c');
+}
+
+function renderFuelList(){
+  const el=$('fuel-list');
+  if(!db.fuelLogs.length){el.innerHTML='<div class="empty"><span class="empty-icon">⛽</span><p>Sin cargas registradas</p></div>';return;}
+  el.innerHTML=db.fuelLogs.slice(0,30).map((f,i)=>{
+    const color=!f.l100km?'var(--sub)':f.l100km>16?'#dc2626':f.l100km>14?'#d97706':'#16a34a';
+    return`<div class="list-item">
+      <div class="item-icon" style="background:#fff7ed;font-size:22px">⛽</div>
+      <div class="item-body">
+        <div class="item-title">${fmtDate(f.date)} <span class="badge ${f.isFull?'green':'amber'}">${f.isFull?'Lleno':'Parcial'}</span></div>
+        <div class="item-sub">
+          KM: <strong>${fmtNum(f.km)}</strong> · ${fmtL(f.liters)}${f.price?' · $'+f.price+'/L':''}
+          ${f.station?`<br>📍 ${f.station}`:''}
+          ${f.l100km?`<br>Consumo: <strong style="color:${color}">${f.l100km.toFixed(2)} L/100km</strong>`:''}
+        </div>
+      </div>
+      <div class="item-right">
+        <div class="item-val">${f.total?fmtMoney(f.total):'—'}</div>
+        ${f.receipts&&f.receipts.length?`<button onclick="viewImg(${i},'fuel')" style="background:#eff6ff;border:none;border-radius:8px;padding:4px 8px;font-size:11px;color:var(--blue);cursor:pointer;margin-top:4px;display:block">📷 ${f.receipts.length}</button>`:''}
+        <button onclick="deleteEntry('fuelLogs',${i})" style="background:none;border:none;font-size:18px;color:#cbd5e1;cursor:pointer;padding:4px;display:block;margin-top:2px">✕</button>
+      </div>
+    </div>`;}).join('');
+}
+
+function renderFuelStats(){
+  const total=db.fuelLogs.reduce((a,f)=>a+f.total,0);
+  const liters=db.fuelLogs.reduce((a,f)=>a+f.liters,0);
+  const fills=db.fuelLogs.length;
+  const avgCons=db.fuelLogs.filter(f=>f.l100km).reduce((a,f,_,arr)=>a+f.l100km/arr.length,0);
+  $('f-total-cost').textContent=fmtMoney(total);
+  $('f-avg-cons').textContent=avgCons>0?avgCons.toFixed(1):'—';
+  $('f-fills').textContent=fills;
+}
+
+// ══════════════════════════
+// MAINTENANCE LOG
+// ══════════════════════════
+function addMaint(){
+  const date=$('mt-date').value;
+  const km=parseFloat($('mt-km').value);
+  const type=$('mt-type').value;
+  if(!date||!km){toast('❌ Fecha y KM son obligatorios','#dc2626');return;}
+  const cost=parseFloat($('mt-cost').value)||0;
+  const nextKm=parseFloat($('mt-next-km').value)||null;
+  const nextDate=$('mt-next-date').value||null;
+  const entry={id:uid(),date,km,type,cost,
+    workshop:$('mt-workshop').value.trim(),
+    desc:$('mt-desc').value.trim(),
+    nextKm,nextDate,receipts:[...maintReceipts]};
+  if(km>db.currentKm)db.currentKm=km;
+  if(nextKm)db.nextServiceKm=Math.min(nextKm,db.nextServiceKm||nextKm);
+  if(nextDate&&(!db.nextServiceDate||nextDate<db.nextServiceDate))db.nextServiceDate=nextDate;
+  db.maintLogs.unshift(entry);
+  autoSave();
+  maintReceipts=[];
+  $('mt-thumbs').innerHTML='';
+  ['mt-km','mt-cost','mt-workshop','mt-desc','mt-next-km','mt-next-date'].forEach(id=>$(id).value='');
+  renderMaintList();
+  renderSchedule();
+  renderDash();
+  toast(`✅ ${type} registrado · ${fmtMoney(cost)}`,'#2563eb');
+}
+
+function renderMaintList(){
+  const el=$('maint-list');
+  if(!db.maintLogs.length){el.innerHTML='<div class="empty"><span class="empty-icon">🔧</span><p>Sin mantenimientos</p></div>';return;}
+  const cur=db.currentKm||0;
+  el.innerHTML=db.maintLogs.slice(0,20).map((m,i)=>{
+    const kmLeft=m.nextKm?m.nextKm-cur:null;
+    let badge='';
+    if(kmLeft!==null)badge=`<span class="badge ${kmLeft<0?'red':kmLeft<2000?'amber':'green'}">${kmLeft<0?'VENCIDO':fmtNum(Math.round(kmLeft))+' km'}</span>`;
+    return`<div class="list-item">
+      <div class="item-icon" style="background:#eff6ff;font-size:20px">🔧</div>
+      <div class="item-body">
+        <div class="item-title">${m.type}</div>
+        <div class="item-sub">
+          ${fmtDate(m.date)} · KM: <strong>${fmtNum(m.km)}</strong>
+          ${m.workshop?` · ${m.workshop}`:''}
+          ${m.desc?`<br>${m.desc.slice(0,60)}${m.desc.length>60?'...':''}`:''}
+          ${m.nextKm?`<br>Próx: ${fmtNum(m.nextKm)} km ${badge}`:''}
+        </div>
+      </div>
+      <div class="item-right">
+        <div class="item-val">${m.cost?fmtMoney(m.cost):'—'}</div>
+        ${m.receipts&&m.receipts.length?`<button onclick="viewImg(${i},'maint')" style="background:#eff6ff;border:none;border-radius:8px;padding:4px 8px;font-size:11px;color:var(--blue);cursor:pointer;margin-top:4px;display:block">📷</button>`:''}
+        <button onclick="deleteEntry('maintLogs',${i})" style="background:none;border:none;font-size:18px;color:#cbd5e1;cursor:pointer;padding:4px;display:block">✕</button>
+      </div>
+    </div>`;}).join('');
+}
+
+function renderSchedule(){
+  const cur=db.currentKm||0;
+  const el=$('sched-list');
+  el.innerHTML=SCHEDULE.map(item=>{
+    const lastMaint=db.maintLogs.find(m=>m.type.toLowerCase().includes(item.name.toLowerCase().split('—')[0].trim().toLowerCase()));
+    const lastKm=lastMaint?lastMaint.km:null;
+    const nextKm=lastKm?lastKm+item.km:null;
+    const kmLeft=nextKm?nextKm-cur:null;
+    const isOverdue=kmLeft!==null&&kmLeft<0;
+    const isClose=kmLeft!==null&&kmLeft>=0&&kmLeft<2000;
+    const pct=nextKm?Math.min(100,Math.max(0,((item.km-(nextKm-cur))/item.km)*100)):0;
+    const barColor=isOverdue?'#dc2626':isClose?'#d97706':'#22c55e';
+    const critColors={critical:'#fef2f2',high:'#fffbeb',medium:'#eff6ff',low:'#f0fdf4'};
+    const critBorders={critical:'#fecaca',high:'#fde68a',medium:'#bfdbfe',low:'#bbf7d0'};
+    return`<div class="sched-item" style="border-left:4px solid ${critBorders[item.priority]};background:${critColors[item.priority]}">
+      <div class="sched-name">${item.name}</div>
+      <div class="sched-meta">${item.desc} · Cada ${fmtNum(item.km)} km</div>
+      ${nextKm?`<div class="prog-wrap"><div class="prog" style="width:${pct}%;background:${barColor}"></div></div>`:''}
+      <div class="sched-status">
+        <span style="font-size:11px;color:var(--sub)">${lastKm?'Último: '+fmtNum(lastKm)+' km':'Sin registro'}</span>
+        <span class="badge ${isOverdue?'red':isClose?'amber':nextKm?'green':'grey'}">${isOverdue?'VENCIDO '+(Math.abs(Math.round(kmLeft)))+' km':isClose?Math.round(kmLeft)+' km':nextKm?'✅ OK':'—'}</span>
+      </div>
+    </div>`;}).join('');
+}
+
+// ══════════════════════════
+// SMART ALERTS ENGINE
+// ══════════════════════════
+function buildAlerts(){
+  const cur=db.currentKm||0;
+  if(!cur)return[];
+  const alerts=[];
+  SCHEDULE.forEach(item=>{
+    const last=db.maintLogs.find(m=>
+      m.type.toLowerCase().includes(item.name.toLowerCase().split('—')[0].trim().toLowerCase())
+    );
+    const lastKm=last?last.km:null;
+    const nextKm=lastKm?lastKm+item.km:null;
+    // If no history but KM known — mark as unknown/warning
+    const kmLeft=nextKm!==null?nextKm-cur:null;
+    const isOverdue=kmLeft!==null&&kmLeft<=0;
+    const isClose=kmLeft!==null&&kmLeft>0&&kmLeft<2000;
+    const noHistory=!lastKm;
+    const pct=lastKm?Math.min(100,Math.max(0,((item.km-(nextKm-cur))/item.km)*100)):noHistory?50:0;
+    // Show all items — with or without history
+    alerts.push({
+      name:item.name,desc:item.desc,priority:item.priority,
+      interval:item.km,lastKm,nextKm,kmLeft,
+      isOverdue,isClose,noHistory,pct,
+      status:isOverdue?'red':isClose?'amber':noHistory?'amber':'green'
+    });
+  });
+  const pOrder={critical:0,high:1,medium:2,low:3};
+  return alerts.sort((a,b)=>{
+    if(a.isOverdue&&!b.isOverdue)return -1;
+    if(!a.isOverdue&&b.isOverdue)return 1;
+    if(a.isOverdue&&b.isOverdue)return pOrder[a.priority]-pOrder[b.priority];
+    if(a.noHistory&&!b.noHistory)return -1;
+    if(!a.noHistory&&b.noHistory)return 1;
+    if(a.isClose&&!b.isClose)return -1;
+    if(!a.isClose&&b.isClose)return 1;
+    return 0;
+  });
+}
+
+function alertMiniHTML(a){
+  const colors={red:{bg:'#fef2f2',border:'#fecaca',name:'#991b1b',sub:'#b91c1c',badge:'#fee2e2',badgeText:'#dc2626'},
+    amber:{bg:'#fffbeb',border:'#fde68a',name:'#92400e',sub:'#a16207',badge:'#fef3c7',badgeText:'#b45309'},
+    green:{bg:'#f0fdf4',border:'#bbf7d0',name:'#15803d',sub:'#166534',badge:'#dcfce7',badgeText:'#15803d'},
+    grey:{bg:'#f8fafc',border:'#e2e8f0',name:'#475569',sub:'#64748b',badge:'#f1f5f9',badgeText:'#64748b'}
+  };
+  const c=colors[a.status]||colors.grey;
+  const icon=a.isOverdue?(a.priority==='critical'?'⚠️':'🔴'):a.isClose?'🟡':'✅';
+  const badgeText=a.isOverdue?(a.priority==='critical'?'CRÍTICO':'VENCIDO'):a.isClose?fmtNum(Math.round(a.kmLeft))+' km':'OK';
+  const subText=a.isOverdue?`Vencido${a.lastKm?' hace '+fmtNum(Math.abs(Math.round(a.kmLeft)))+' km':' — sin registro'}`
+    :a.isClose?`Próximo en ${fmtNum(Math.round(a.kmLeft))} km`
+    :a.lastKm?`Próx: ${fmtNum(Math.round(a.nextKm))} km`:'Sin registro';
+  return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;margin-bottom:5px;background:${c.bg};border:1px solid ${c.border}">
+    <span style="font-size:14px;flex-shrink:0">${icon}</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:11px;font-weight:700;color:${c.name}">${a.name}</div>
+      <div style="font-size:10px;color:${c.sub};margin-top:1px">${subText}</div>
+    </div>
+    <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:${c.badge};color:${c.badgeText};white-space:nowrap">${badgeText}</span>
+  </div>`;
+}
+
+function alertFullHTML(a){
+  const colors={red:{bg:'#fef2f2',border:'#fecaca',name:'#991b1b',bar:'#dc2626',btn:'#dc2626'},
+    amber:{bg:'#fffbeb',border:'#fde68a',name:'#92400e',bar:'#d97706',btn:'#d97706'},
+    green:{bg:'#f0fdf4',border:'#bbf7d0',name:'#15803d',bar:'#16a34a',btn:'#16a34a'},
+    grey:{bg:'#f8fafc',border:'#e2e8f0',name:'#475569',bar:'#94a3b8',btn:'#94a3b8'}
+  };
+  const c=colors[a.status]||colors.grey;
+  const icon=a.isOverdue?(a.priority==='critical'?'⚠️':'🔴'):a.noHistory?'🟡':a.isClose?'🟡':'✅';
+  const badgeText=a.isOverdue?(a.priority==='critical'?'CRÍTICO — VENCIDO':'VENCIDO '+fmtNum(Math.abs(Math.round(a.kmLeft)))+' km'):
+    a.noHistory?'Sin registro':
+    a.isClose?'Próximo '+fmtNum(Math.round(a.kmLeft))+' km':'OK';
+  const metaText=a.noHistory&&!a.lastKm?`Sin registro · Cada ${fmtNum(a.interval)} km — confirmá cuándo fue el último`:
+    a.lastKm?`Último: ${fmtNum(a.lastKm)} km · Cada ${fmtNum(a.interval)} km`:`Sin registro · Cada ${fmtNum(a.interval)} km`;
+  const showBtn=a.isOverdue||a.isClose||a.noHistory;
+  const btnText=a.isOverdue?'🔧 Registrar service ahora':a.noHistory?'📋 Registrar último service':'📅 Agendar service';
+  return`<div style="border-radius:12px;padding:12px 14px;margin-bottom:8px;background:${c.bg};border:1px solid ${c.border}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <span style="font-size:13px;font-weight:700;color:${c.name}">${icon} ${a.name}</span>
+      <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${c.btn}22;color:${c.btn}">${badgeText}</span>
+    </div>
+    <div style="font-size:11px;color:${c.name};opacity:.8;margin-bottom:6px">${metaText}</div>
+    <div style="height:4px;border-radius:999px;background:#e5e7eb;overflow:hidden;margin-bottom:${showBtn?'8':'0'}px">
+      <div style="height:4px;border-radius:999px;background:${c.bar};width:${a.pct}%"></div>
+    </div>
+    ${showBtn?`<button onclick="nav('maint',document.querySelectorAll('.nav-item')[3])" style="border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%;text-align:center;background:${c.btn};color:#fff">${btnText}</button>`:''}
+  </div>`;
+}
+
+// ══════════════════════════
+// DASHBOARD
+// ══════════════════════════
+function renderDash(){
+  const cur=db.currentKm||0;
+  $('d-km').textContent=cur>0?fmtNum(cur):'— km';
+  $('d-km-sub').textContent=cur>0?'Actualizado: '+fmtDate(db.dayLogs[0]?.date||today()):'Agrega el KM del día para actualizar';
+
+  // Smart alerts
+  const alerts=buildAlerts();
+  const showAlerts=alerts.filter(a=>a.isOverdue||a.isClose||a.noHistory);
+  const allGood=showAlerts.length===0;
+  $('d-alerts').innerHTML=allGood
+    ?'<div class="alert-box green"><span class="alert-icon">✅</span>Sin alertas de mantenimiento</div>'
+    :showAlerts.map(a=>alertFullHTML(a)).join('');
+
+  // Stats
+  const thisMonth=today().slice(0,7);
+  const monthFuel=db.fuelLogs.filter(f=>f.date?.startsWith(thisMonth));
+  $('d-fuel-month').textContent=fmtMoney(monthFuel.reduce((a,f)=>a+f.total,0));
+  const avgCons=db.fuelLogs.filter(f=>f.l100km).reduce((a,f,_,arr)=>a+f.l100km/arr.length,0);
+  $('d-cons').textContent=avgCons>0?avgCons.toFixed(1)+' L':'—';
+  $('d-next-svc').textContent=db.nextServiceKm?fmtNum(db.nextServiceKm)+' km':'—';
+  $('d-days').textContent=db.dayLogs.length;
+
+  // Last 4 fuel
+  const fl=$('d-fuel-list');
+  if(!db.fuelLogs.length){fl.innerHTML='<div class="empty" style="padding:16px"><span style="font-size:24px">⛽</span><p style="margin-top:6px;font-size:12px">Sin cargas registradas</p></div>';}
+  else{fl.innerHTML=db.fuelLogs.slice(0,4).map(f=>`
+    <div class="list-item">
+      <div class="item-icon" style="background:#fff7ed">⛽</div>
+      <div class="item-body">
+        <div class="item-title">${fmtDate(f.date)}</div>
+        <div class="item-sub">KM: ${fmtNum(f.km)} · ${fmtL(f.liters)}${f.station?' · '+f.station:''}</div>
+      </div>
+      <div class="item-right">
+        <div class="item-val" style="font-size:14px">${fmtMoney(f.total)}</div>
+        ${f.l100km?`<div style="font-size:11px;color:${f.l100km>16?'#dc2626':f.l100km>14?'#d97706':'#16a34a'};font-weight:700">${f.l100km.toFixed(1)} L/100</div>`:''}
+      </div>
+    </div>`).join('');}
+
+  // Remove old upcoming maint section - replaced by alerts
+  const ml=$('d-maint-list');
+  if(ml)ml.innerHTML='';
+}
+
+// ══════════════════════════
+// REPORTS
+// ══════════════════════════
+function renderReports(){
+  // Bar chart
+  const chartData=db.fuelLogs.filter(f=>f.l100km).slice(0,10).reverse();
+  const chart=$('cons-chart');
+  if(!chartData.length){chart.innerHTML='<p style="color:var(--sub);font-size:12px;padding:16px">Sin datos suficientes</p>';}
+  else{
+    const max=Math.max(...chartData.map(f=>f.l100km));
+    chart.innerHTML=chartData.map(f=>{
+      const h=Math.round((f.l100km/max)*88);
+      const c=f.l100km>16?'#dc2626':f.l100km>14?'#d97706':'#22c55e';
+      return`<div class="bar-wrap"><div class="bar-val" style="color:${c}">${f.l100km.toFixed(1)}</div><div class="bar" style="height:${h}px;background:${c}"></div><div class="bar-lbl">${fmtDate(f.date).slice(0,5)}</div></div>`;
+    }).join('');
+  }
+
+  // By month
+  const byMonth={};
+  db.fuelLogs.forEach(f=>{
+    if(!f.date)return;
+    const m=f.date.slice(0,7);
+    if(!byMonth[m])byMonth[m]={liters:0,cost:0,count:0};
+    byMonth[m].liters+=f.liters;byMonth[m].cost+=f.total;byMonth[m].count++;
+  });
+  const mr=$('month-report');
+  const months=Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,6);
+  if(!months.length){mr.innerHTML='<p style="color:var(--sub);font-size:12px">Sin datos</p>';}
+  else{mr.innerHTML=months.map(([m,d])=>{
+    const[y,mo]=m.split('-');
+    const name=new Date(y,mo-1).toLocaleDateString('es-AU',{month:'long',year:'numeric'});
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <div><strong>${name}</strong><br><span style="font-size:11px;color:var(--sub)">${d.count} cargas · ${d.liters.toFixed(1)}L</span></div>
+      <div style="font-size:18px;font-weight:800;color:var(--orange)">${fmtMoney(d.cost)}</div>
+    </div>`;}).join('');}
+
+  // Maint cost
+  const totalMaint=db.maintLogs.reduce((a,m)=>a+m.cost,0);
+  const mRep=$('maint-report');
+  if(!db.maintLogs.length){mRep.innerHTML='<p style="color:var(--sub);font-size:12px">Sin mantenimientos</p>';}
+  else{
+    const byType={};
+    db.maintLogs.forEach(m=>{if(!byType[m.type])byType[m.type]=0;byType[m.type]+=m.cost;});
+    mRep.innerHTML=`<div style="font-size:22px;font-weight:800;color:var(--blue);margin-bottom:12px">Total: ${fmtMoney(totalMaint)}</div>`+
+    Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([type,cost])=>`
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span>${type}</span><strong style="color:var(--orange)">${fmtMoney(cost)}</strong>
+      </div>`).join('');
+  }
+}
+
+// ══════════════════════════
+// CLAUDE AI RECEIPT SCANNER
+// ══════════════════════════
+// ── CLAUDE API KEY — stored in localStorage, never in code ──
+function getClaudeKey(){
+  return localStorage.getItem('claude_api_key')||'';
+}
+function setClaudeKey(key){
+  localStorage.setItem('claude_api_key',key.trim());
+}
+function promptForKey(){
+  const existing=getClaudeKey();
+  const key=prompt(
+    existing?'Actualizá tu API key de Claude (Anthropic):':'Para usar el escáner de IA necesitás una API key de Claude.\n\nObtené una gratis en console.anthropic.com\n\nPegá tu API key acá:',
+    existing||''
+  );
+  if(key&&key.trim().startsWith('sk-ant')){
+    setClaudeKey(key);
+    toast('✅ API key guardada','#16a34a');
+    return key.trim();
+  } else if(key){
+    toast('❌ API key inválida — debe empezar con sk-ant','#dc2626');
+    return null;
+  }
+  return null;
+}
+
+function imgToBase64(file){
+  return new Promise((res,rej)=>{
+    // If PDF, read directly
+    if(file.type==='application/pdf'){
+      const r=new FileReader();
+      r.onload=e=>res(e.target.result.split(',')[1]);
+      r.onerror=rej;
+      r.readAsDataURL(file);
+      return;
+    }
+    // For images, convert to JPEG via canvas to ensure compatibility
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      // Resize if too large (max 1500px wide)
+      const maxW=1500;
+      const scale=img.width>maxW?maxW/img.width:1;
+      canvas.width=img.width*scale;
+      canvas.height=img.height*scale;
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      const dataUrl=canvas.toDataURL('image/jpeg',0.85);
+      URL.revokeObjectURL(url);
+      res(dataUrl.split(',')[1]);
+    };
+    img.onerror=rej;
+    img.src=url;
+  });
+}
+
+function getMediaType(file){
+  if(file.type==='application/pdf')return'application/pdf';
+  return'image/jpeg'; // Always send as JPEG after canvas conversion
+}
+
+async function callClaude(base64img,mediaType,prompt){
+  let key=getClaudeKey();
+  if(!key){
+    key=promptForKey();
+    if(!key)throw new Error('API key no configurada');
+  }
+  const isPDF=mediaType==='application/pdf';
+  const contentBlock=isPDF
+    ?{type:'document',source:{type:'base64',media_type:'application/pdf',data:base64img}}
+    :{type:'image',source:{type:'base64',media_type:mediaType,data:base64img}};
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-sonnet-4-6',
+      max_tokens:1000,
+      messages:[{
+        role:'user',
+        content:[contentBlock,{type:'text',text:prompt}]
+      }]
+    })
+  });
+  const data=await resp.json();
+  if(!resp.ok||data.error)throw new Error(data.error?.message||`HTTP ${resp.status}`);
+  if(!data.content||!data.content[0])throw new Error('Empty response from API');
+  return data.content[0].text;
+}
+
+async function scanFuelReceipt(input){
+  const file=input.files[0];
+  if(!file)return;
+  // Show thumb immediately
+  const reader=new FileReader();
+  reader.onload=e=>{
+    fuelReceipts=[{name:file.name,data:e.target.result}];
+    renderThumbs('fu-thumbs',fuelReceipts);
+  };
+  reader.readAsDataURL(file);
+  // Show scanning status
+  const status=$('fu-scan-status');
+  const msg=$('fu-scan-msg');
+  const icon=$('fu-scan-icon');
+  status.style.display='block';
+  icon.textContent='⏳';
+  msg.textContent='Analizando recibo con IA...';
+  try{
+    const base64=await imgToBase64(file);
+    const mediaType=getMediaType(file);
+    const result=await callClaude(base64,mediaType,
+      `Analyze this fuel/diesel receipt and extract the following data. 
+      Respond ONLY with valid JSON, no other text:
+      {
+        "liters": number or null,
+        "price_per_liter": number or null,
+        "total": number or null,
+        "station": "station name or null",
+        "date": "YYYY-MM-DD or null",
+        "km": number or null,
+        "notes": "any other relevant info or null"
+      }
+      If you cannot find a value, use null. Numbers should have no currency symbols.`
+    );
+    // Parse JSON from response
+    const clean=result.replace(/```json|```/g,'').trim();
+    const data=JSON.parse(clean);
+    // Fill in form fields
+    if(data.liters){$('fu-liters').value=data.liters.toFixed(1);}
+    if(data.price_per_liter){$('fu-price').value=data.price_per_liter.toFixed(3);}
+    if(data.total){$('fu-total').value=data.total.toFixed(2);}
+    if(data.station){$('fu-station').value=data.station;}
+    if(data.date){$('fu-date').value=data.date;}
+    if(data.km){$('fu-km').value=Math.round(data.km);}
+    // Recalculate if we got liters and price
+    if(data.liters&&data.price_per_liter) calcTotal();
+    if(data.km) calcConsumption();
+    // Success message
+    const found=[];
+    if(data.liters)found.push(`${data.liters.toFixed(1)}L`);
+    if(data.total)found.push(`$${data.total.toFixed(2)}`);
+    if(data.station)found.push(data.station);
+    icon.textContent='✅';
+    msg.textContent=found.length?`Detectado: ${found.join(' · ')}`:'Recibo leído — verificá los datos';
+    msg.style.color='#15803d';
+    toast('✅ Recibo escaneado automáticamente','#16a34a');
+    setTimeout(()=>status.style.display='none',4000);
+  }catch(e){
+    icon.textContent='⚠️';
+    msg.textContent='Error: '+e.message;
+    msg.style.color='#d97706';
+    setTimeout(()=>status.style.display='none',6000);
+  }
+  input.value='';
+}
+
+async function scanMaintReceipt(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    maintReceipts=[{name:file.name,data:e.target.result}];
+    renderThumbs('mt-thumbs',maintReceipts);
+  };
+  reader.readAsDataURL(file);
+  const status=$('mt-scan-status');
+  const msg=$('mt-scan-msg');
+  const icon=$('mt-scan-icon');
+  status.style.display='block';
+  icon.textContent='⏳';
+  msg.textContent='Analizando factura con IA...';
+  try{
+    const base64=await imgToBase64(file);
+    const mediaType=getMediaType(file);
+    const result=await callClaude(base64,mediaType,
+      `Analyze this vehicle maintenance/repair invoice and extract the following data.
+      Respond ONLY with valid JSON, no other text:
+      {
+        "total": number or null,
+        "workshop": "workshop/garage name or null",
+        "date": "YYYY-MM-DD or null",
+        "description": "brief description of work done, max 100 chars, or null",
+        "type": "one of: Cambio de aceite + filtro, Filtro de aire, Filtro de combustible, Frenos — pastillas/zapatas, Neumáticos — rotación, Neumáticos — reemplazo, Correa de distribución, Batería, Refrigerante, Inspección general, Reparación mecánica, Eléctrico, Otro",
+        "next_service_km": number or null
+      }
+      Numbers have no currency symbols.`
+    );
+    const clean=result.replace(/```json|```/g,'').trim();
+    const data=JSON.parse(clean);
+    if(data.total){$('mt-cost').value=data.total.toFixed(2);}
+    if(data.workshop){$('mt-workshop').value=data.workshop;}
+    if(data.date){$('mt-date').value=data.date;}
+    if(data.description){$('mt-desc').value=data.description;}
+    if(data.next_service_km){$('mt-next-km').value=Math.round(data.next_service_km);}
+    if(data.type){
+      const sel=$('mt-type');
+      for(let i=0;i<sel.options.length;i++){
+        if(sel.options[i].value===data.type){sel.selectedIndex=i;break;}
+      }
+    }
+    const found=[];
+    if(data.total)found.push(`$${data.total.toFixed(2)}`);
+    if(data.workshop)found.push(data.workshop);
+    if(data.type)found.push(data.type);
+    icon.textContent='✅';
+    msg.textContent=found.length?`Detectado: ${found.join(' · ')}`:'Factura leída — verificá los datos';
+    msg.style.color='#15803d';
+    toast('✅ Factura escaneada automáticamente','#16a34a');
+    setTimeout(()=>status.style.display='none',4000);
+  }catch(e){
+    icon.textContent='⚠️';
+    msg.textContent='Error: '+e.message;
+    msg.style.color='#d97706';
+    setTimeout(()=>status.style.display='none',6000);
+  }
+  input.value='';
+}
+
+
+function addThumb(input,containerId,arr){
+  Array.from(input.files).forEach(file=>{
+    if(file.size>8*1024*1024){toast('❌ Imagen muy grande (máx 8MB)','#dc2626');return;}
+    const reader=new FileReader();
+    reader.onload=e=>{
+      arr.push({name:file.name,data:e.target.result});
+      renderThumbs(containerId,arr);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function renderThumbs(containerId,arr){
+  $(containerId).innerHTML=arr.map((r,i)=>`
+    <div class="thumb">
+      <img src="${r.data}" alt="${r.name}">
+      <button class="del" onclick="removeThumb('${containerId}',${i})">✕</button>
+    </div>`).join('');
+}
+function removeThumb(containerId,i){
+  if(containerId==='fu-thumbs')fuelReceipts.splice(i,1),renderThumbs('fu-thumbs',fuelReceipts);
+  else maintReceipts.splice(i,1),renderThumbs('mt-thumbs',maintReceipts);
+}
+function viewImg(idx,type){
+  const entry=type==='fuel'?db.fuelLogs[idx]:db.maintLogs[idx];
+  if(!entry?.receipts?.length)return;
+  $('img-viewer').innerHTML=entry.receipts.map(r=>`
+    <img src="${r.data}" style="width:100%;border-radius:10px;margin-bottom:8px" alt="${r.name}">`).join('');
+  $('img-modal').style.display='flex';
+}
+
+// ══════════════════════════
+// DELETE
+// ══════════════════════════
+function deleteEntry(list,idx){
+  if(!confirm('¿Eliminar?'))return;
+  db[list].splice(idx,1);
+  autoSave();
+  renderAll();
+  toast('🗑 Eliminado');
+}
+
+// ══════════════════════════
+// EXCEL EXPORT
+// ══════════════════════════
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  const fuelRows=[["Fecha","KM","Litros","$/L","Total $","L/100km","Estación","Tanque"]];
+  db.fuelLogs.forEach(f=>fuelRows.push([fmtDate(f.date),f.km,f.liters,f.price,f.total,f.l100km?+f.l100km.toFixed(2):'',f.station||'',f.isFull?'Lleno':'Parcial']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fuelRows),"Combustible");
+  const maintRows=[["Fecha","KM","Tipo","Costo","Taller","Próx.KM","Próx.Fecha","Descripción"]];
+  db.maintLogs.forEach(m=>maintRows.push([fmtDate(m.date),m.km,m.type,m.cost,m.workshop||'',m.nextKm||'',m.nextDate?fmtDate(m.nextDate):'',m.desc||'']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(maintRows),"Mantenimientos");
+  const dayRows=[["Fecha","Ruta","KM Inicio","KM Fin","KM Recorridos","Sal.Casa","Llega Dep.","Fin Turno","Notas"]];
+  db.dayLogs.forEach(d=>dayRows.push([fmtDate(d.date),d.route,d.kmStart,d.kmEnd||'',d.kmDriven||'',d.leaveHome||'',d.arriveDepot||'',d.endShift||'',d.notes||'']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(dayRows),"Dias");
+  const totalFuel=db.fuelLogs.reduce((a,f)=>a+f.total,0);
+  const avgCons=db.fuelLogs.filter(f=>f.l100km).reduce((a,f,_,arr)=>a+f.l100km/arr.length,0);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['Log Book — '+((db.vehicle&&db.vehicle.plate)||'Truck')],[],
+    ["Vehículo",(db.vehicle&&db.vehicle.model)||'—'],
+    ["Placa",(db.vehicle&&db.vehicle.plate)||'—'],
+    ["Motor",(db.vehicle&&db.vehicle.engine)||'—'],
+    ["Ruta",(db.vehicle&&db.vehicle.route)||'—'],
+    ["Conductor",(db.vehicle&&db.vehicle.driver)||'—'],
+    ["KM actual",db.currentKm],["Próx. service KM",db.nextServiceKm||'—'],[],
+    ["Total gasto combustible",fmtMoney(totalFuel)],
+    ["Consumo promedio",avgCons>0?+avgCons.toFixed(2):'—'],
+    ["Total gasto mantenimiento",fmtMoney(db.maintLogs.reduce((a,m)=>a+m.cost,0))],
+    ["Cargas registradas",db.fuelLogs.length],
+    ["Mantenimientos",db.maintLogs.length],
+    ["Días de turno",db.dayLogs.length],
+  ]),"Resumen");
+  XLSX.writeFile(wb,`LogBook_${(db.vehicle&&db.vehicle.plate)||'Truck'}_${today()}.xlsx`);
+  toast('✅ Excel descargado','#16a34a');
+}
+
+// ══════════════════════════
+// VEHICLE CONFIG
+// ══════════════════════════
+function openVehicleConfig(){
+  if(!db.vehicle)db.vehicle={plate:'',model:'',engine:'',driver:''};
+  $('cfg-plate').value=db.vehicle.plate||'';
+  $('cfg-model').value=db.vehicle.model||'';
+  $('cfg-engine').value=db.vehicle.engine||'';
+  $('cfg-driver').value=db.vehicle.driver||'';
+  $('vehicle-modal').style.display='flex';
+}
+
+function saveVehicleConfig(){
+  if(!db.vehicle)db.vehicle={};
+  db.vehicle.plate=$('cfg-plate').value.trim();
+  db.vehicle.model=$('cfg-model').value.trim();
+  db.vehicle.engine=$('cfg-engine').value.trim();
+  db.vehicle.driver=$('cfg-driver').value.trim();
+  autoSave();
+  updateTopbar();
+  $('vehicle-modal').style.display='none';
+  const sh=$('sched-hdr');
+  if(sh)sh.textContent='Programa de service'+(db.vehicle.model?' — '+db.vehicle.model:'');
+  toast('✅ Vehículo configurado: '+(db.vehicle.plate||'Sin placa'),'#16a34a');
+}
+
+function updateTopbar(){
+  const v=db.vehicle||{};
+  const title=$('topbar-title');
+  const sub=$('topbar-sub');
+  if(title)title.textContent='🚛 '+(v.plate?v.plate+' Log Book':'Log Book');
+  if(sub){
+    const parts=[];
+    if(v.model)parts.push(v.model);
+    if(v.driver)parts.push(v.driver);
+    sub.textContent=parts.length?parts.join(' · '):'Tocá ⚙️ para configurar vehículo';
+  }
+}
+
+// ══════════════════════════
+// RENDER ALL
+// ══════════════════════════
+function renderAll(){
+  renderDash();
+  renderDayList();
+  renderFuelList();
+  renderFuelStats();
+  renderMaintList();
+  renderSchedule();
+  renderReports();
+}
+
+// ══════════════════════════
+// INIT
+// ══════════════════════════
+window.onload=()=>{
+  // Auto-load from localStorage
+  const hadData=autoLoad();
+  if(!db.vehicle)db.vehicle={plate:'FE659',model:'Mitsubishi Canter',route:'SYD047',engine:'4D34-3AT Turbo Diesel 3.9L',driver:''};
+  updateTopbar();
+  $('fu-date').value=today();
+  $('mt-date').value=today();
+  const sh=$('sched-hdr');
+  if(sh)sh.textContent='Programa de service'+(db.vehicle.model?' — '+db.vehicle.model:'');
+  renderDash();
+  renderSchedule();
+  if(hadData){
+    const count=db.fuelLogs.length+db.maintLogs.length+db.dayLogs.length;
+    if(count>0) toast(`✅ ${count} registros cargados automáticamente`,'#16a34a');
+  } else {
+    // First time — prompt to configure
+    setTimeout(()=>openVehicleConfig(), 800);
+  }
+  // Update save status
+  const el=$('save-status');
+  if(el){
+    if(db.savedAt){
+      const d=new Date(db.savedAt);
+      el.textContent='Último auto-guardado: '+d.toLocaleDateString('es-AU')+' '+d.toLocaleTimeString('es-AU');
+    } else {
+      el.textContent='Los datos se guardan automáticamente en este navegador';
+    }
+  }
+};
+</script>
+</body>
+</html>
